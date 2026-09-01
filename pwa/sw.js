@@ -1,5 +1,5 @@
 /* generado por build.js — no editar a mano */
-const VERSION = "reparto-3d76d28de8";
+const VERSION = "reparto-06ee76fb87";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest",
   "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./apple-touch-icon.png"];
 

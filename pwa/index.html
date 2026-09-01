@@ -903,7 +903,15 @@ function viewAjustes(t){
           '<span class="row-amt num">' + pctText(c.pct) + "</span></button>";
       }).join("")
     : '<div class="empty">' + svg(I.pie) + "<h3>Sin categorías</h3><p>Agrega la primera con el botón de abajo.</p></div>") + "</div>";
-  out += '<p class="list-note">La plantilla se copia al crear un ingreso, pero ahí puedes cambiar los porcentajes uno por uno.</p></div>';
+  out += '<p class="list-note">Estos porcentajes son la <b>plantilla</b>: se copian al crear un ingreso nuevo. ' +
+    'Los ingresos que ya registraste conservan el reparto que tenían, para que puedas repartir uno distinto cuando lo necesites.</p>';
+  if (state.incomes.length) {
+    const n = state.incomes.length;
+    out += '<button class="btn" data-action="apply-tpl" style="margin-top:2px">' +
+      (n === 1 ? "Aplicar estos porcentajes al ingreso ya registrado"
+               : "Aplicar estos porcentajes a los " + n + " ingresos ya registrados") + "</button>";
+  }
+  out += "</div>";
 
   out += '<div class="section"><h2>Formato del dinero</h2><div class="card" style="padding:14px 15px; display:flex; flex-direction:column; gap:13px">' +
     '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">' +
@@ -1728,6 +1736,25 @@ async function runAction(action, id){
     case "edit-category": sheetCategory(catById(id)); break;
     case "cat-detail":    sheetCatDetail(id); break;
     case "toggle-table":  showTable = !showTable; render(); break;
+    case "apply-tpl": {
+      const plan = state.categories.reduce((a, c) => a + c.pct, 0);
+      const ok = await confirmSheet("Aplicar la plantilla",
+        (state.incomes.length === 1
+          ? "El ingreso que ya registraste pasará"
+          : "Los <b>" + state.incomes.length + "</b> ingresos que ya registraste pasarán") +
+        " a repartirse con los porcentajes de ahora (" +
+        state.categories.map(c => esc(c.name) + " " + pctText(c.pct)).join(", ") + ")." +
+        (Math.abs(plan - 100) > 0.05 ? " Tu plantilla suma <b>" + pctText(plan) + "</b>, así que quedará ese resto sin repartir." : "") +
+        " Si a algún ingreso le habías puesto un reparto propio, se pierde.",
+        "Aplicar a todos");
+      if (ok) {
+        state.incomes.forEach(i => {
+          i.alloc = Object.fromEntries(state.categories.map(c => [c.id, c.pct]));
+        });
+        save(); tab = "resumen"; render();
+      }
+      break;
+    }
     case "excel":         await exportExcel(); break;
     case "export":        exportData(); break;
     case "import":        importData(); break;
